@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  test:
+    name: Unit & integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build -w frontend
+
+  smoke:
+    name: End-to-end smoke test (through the gateway)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Start all services (in-memory mode)
+        run: |
+          node scripts/dev.js > dev.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8080/health && break; sleep 1; done
+      - run: npm run smoke
+      - if: failure()
+        run: cat dev.log
+
+  docker:
+    name: Docker images build
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        service: [auth-service, property-service, booking-service, notification-service, api-gateway]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.service --build-arg SERVICE=${{ matrix.service }} -t nestar/${{ matrix.service }} .
