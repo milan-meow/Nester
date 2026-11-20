@@ -1,4 +1,4 @@
-const { env, envInt, connectDatabase, makeRepository, sharedBus, createLogger } = require('@nestar/common');
+const { env, envInt, secret, connectDatabase, makeRepository, sharedBus, createLogger } = require('@nestar/common');
 const { createApp } = require('./app');
 const { registerSubscribers } = require('./subscribers');
 
@@ -10,7 +10,7 @@ async function start() {
   const notifications = makeRepository(conn, 'notifications', [[{ userId: 1, read: 1, createdAt: -1 }]]);
 
   await registerSubscribers(sharedBus(env('REDIS_URL', '')), notifications);
-  const app = createApp({ notifications, jwtSecret: env('JWT_SECRET', 'dev-only-secret') });
+  const app = createApp({ notifications, jwtSecret: secret('JWT_SECRET') });
 
   return app.listen(port, () => logger.info(`listening on :${port}`, { db: conn ? 'mongo' : 'memory' }));
 }

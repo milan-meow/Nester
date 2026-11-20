@@ -1,4 +1,4 @@
-const { env, envInt, createLogger } = require('@nestar/common');
+const { env, envInt, secret, createLogger } = require('@nestar/common');
 const { createApp } = require('./app');
 
 const logger = createLogger('api-gateway');
@@ -6,7 +6,7 @@ const logger = createLogger('api-gateway');
 function start() {
   const port = envInt('PORT', envInt('GATEWAY_PORT', 8080));
   const app = createApp({
-    jwtSecret: env('JWT_SECRET', 'dev-only-secret'),
+    jwtSecret: secret('JWT_SECRET'),
     corsOrigin: env('CORS_ORIGIN', 'http://localhost:5173'),
     rateLimitPerMinute: envInt('RATE_LIMIT_PER_MINUTE', 300),
     trustProxy: env('TRUST_PROXY', 'loopback, linklocal, uniquelocal'),

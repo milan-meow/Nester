@@ -1,4 +1,4 @@
-const { env, envInt, connectDatabase, makeRepository, sharedBus, createLogger } = require('@nestar/common');
+const { env, envInt, secret, connectDatabase, makeRepository, sharedBus, createLogger } = require('@nestar/common');
 const { createApp } = require('./app');
 
 const logger = createLogger('property-service');
@@ -15,8 +15,8 @@ async function start() {
   const app = createApp({
     properties,
     bus: sharedBus(env('REDIS_URL', '')),
-    jwtSecret: env('JWT_SECRET', 'dev-only-secret'),
-    internalKey: env('INTERNAL_API_KEY', 'dev-internal-key'),
+    jwtSecret: secret('JWT_SECRET'),
+    internalKey: secret('INTERNAL_API_KEY'),
   });
 
   return app.listen(port, () => logger.info(`listening on :${port}`, { db: conn ? 'mongo' : 'memory' }));

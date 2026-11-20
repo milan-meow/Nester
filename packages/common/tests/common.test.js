@@ -65,3 +65,24 @@ describe('JWT helpers', () => {
     expect(() => verifyToken(token, 'wrong')).toThrow(AppError);
   });
 });
+
+describe('secret()', () => {
+  const { secret } = require('../src');
+  const saved = { ...process.env };
+  afterEach(() => { process.env = { ...saved }; });
+
+  test('dev default is fine outside production', () => {
+    delete process.env.JWT_SECRET;
+    expect(secret('JWT_SECRET')).toBe('dev-only-secret');
+  });
+
+  test('production refuses default or short secrets', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.JWT_SECRET;
+    expect(() => secret('JWT_SECRET')).toThrow(/at least 32/);
+    process.env.JWT_SECRET = 'short';
+    expect(() => secret('JWT_SECRET')).toThrow();
+    process.env.JWT_SECRET = 'x'.repeat(40);
+    expect(secret('JWT_SECRET')).toHaveLength(40);
+  });
+});

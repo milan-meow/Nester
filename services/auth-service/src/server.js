@@ -1,4 +1,4 @@
-const { env, envInt, connectDatabase, makeRepository, sharedBus, createLogger } = require('@nestar/common');
+const { env, envInt, secret, connectDatabase, makeRepository, sharedBus, createLogger } = require('@nestar/common');
 const { createApp } = require('./app');
 
 const logger = createLogger('auth-service');
@@ -13,7 +13,7 @@ async function start() {
   const app = createApp({
     users,
     bus,
-    jwtSecret: env('JWT_SECRET', 'dev-only-secret'),
+    jwtSecret: secret('JWT_SECRET'),
     jwtExpiresIn: env('JWT_EXPIRES_IN', '7d'),
   });
 
