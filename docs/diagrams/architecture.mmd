@@ -1,0 +1,16 @@
+flowchart LR
+    U[User browser] --> FE[React SPA :5173]
+    FE -->|/api/*| GW[API Gateway :8080]
+    GW -->|/api/auth| AUTH[auth-service :4001]
+    GW -->|/api/properties| PROP[property-service :4002]
+    GW -->|/api/bookings| BOOK[booking-service :4003]
+    GW -->|/api/notifications| NOTI[notification-service :4004]
+    AUTH --- DB1[(nestar_auth)]
+    PROP --- DB2[(nestar_property)]
+    BOOK --- DB3[(nestar_booking)]
+    NOTI --- DB4[(nestar_notification)]
+    BOOK -->|internal REST| PROP
+    AUTH -.events.-> BUS{{Redis pub/sub}}
+    PROP -.events.-> BUS
+    BOOK -.events.-> BUS
+    BUS -.subscribe.-> NOTI

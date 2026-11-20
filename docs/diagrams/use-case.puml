@@ -1,0 +1,52 @@
+@startuml Nestar-UseCases
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Guest
+actor "Seeker\n(buyer / tenant)" as Seeker
+actor "Owner\n(seller / landlord / agent)" as Owner
+actor Admin
+actor "Notification\nSystem" as Sys
+
+Seeker -|> Guest
+Owner -|> Seeker
+Admin -|> Owner
+
+rectangle Nestar {
+  usecase "Search & filter listings" as UC1
+  usecase "View listing details" as UC2
+  usecase "Register / Login" as UC3
+  usecase "Make purchase offer" as UC4
+  usecase "Send rent request" as UC5
+  usecase "Book a viewing" as UC6
+  usecase "Cancel my request" as UC7
+  usecase "Post a listing" as UC8
+  usecase "Edit / delete my listing" as UC9
+  usecase "Accept / reject request" as UC10
+  usecase "View dashboard" as UC11
+  usecase "Read notifications" as UC12
+  usecase "Moderate any listing" as UC13
+  usecase "Send notification" as UC14
+}
+
+Guest --> UC1
+Guest --> UC2
+Guest --> UC3
+Seeker --> UC4
+Seeker --> UC5
+Seeker --> UC6
+Seeker --> UC7
+Seeker --> UC11
+Seeker --> UC12
+Owner --> UC8
+Owner --> UC9
+Owner --> UC10
+Admin --> UC13
+
+UC4 ..> UC14 : <<include>>
+UC5 ..> UC14 : <<include>>
+UC6 ..> UC14 : <<include>>
+UC10 ..> UC14 : <<include>>
+UC14 <-- Sys
+@enduml
