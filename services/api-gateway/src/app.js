@@ -10,8 +10,14 @@ const { readBearer, verifyToken, errorHandler, createLogger, requestLogger } = r
  * routes: { auth, properties, bookings, notifications } → upstream base URLs.
  * NOTE: no express.json() here — the proxy must stream the raw body to the service.
  */
-function createApp({ routes, jwtSecret, corsOrigin = '*', rateLimitPerMinute = 300, timeoutMs = 10000 }) {
+function createApp({
+  routes, jwtSecret, corsOrigin = '*', rateLimitPerMinute = 300, timeoutMs = 10000,
+  trustProxy = 'loopback, linklocal, uniquelocal',
+}) {
   const app = express();
+  // We sit behind nginx / a load balancer. Without this every user shares the proxy's IP,
+  // so one busy user would rate-limit everybody. Only private-network proxies are trusted.
+  app.set('trust proxy', trustProxy);
   const logger = createLogger('api-gateway');
 
   app.disable('x-powered-by');

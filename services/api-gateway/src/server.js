@@ -9,6 +9,7 @@ function start() {
     jwtSecret: env('JWT_SECRET', 'dev-only-secret'),
     corsOrigin: env('CORS_ORIGIN', 'http://localhost:5173'),
     rateLimitPerMinute: envInt('RATE_LIMIT_PER_MINUTE', 300),
+    trustProxy: env('TRUST_PROXY', 'loopback, linklocal, uniquelocal'),
     routes: {
       auth: env('AUTH_SERVICE_URL', 'http://localhost:4001'),
       properties: env('PROPERTY_SERVICE_URL', 'http://localhost:4002'),

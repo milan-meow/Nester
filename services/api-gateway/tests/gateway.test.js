@@ -91,3 +91,12 @@ test('upstream down → 502 JSON', async () => {
   const res = await request(app).get('/api/notifications').expect(502);
   expect(res.body.error.code).toBe('BAD_GATEWAY');
 });
+
+test('rate limit is per real client IP when behind a proxy (nginx)', async () => {
+  const limited = createApp({ jwtSecret: SECRET, rateLimitPerMinute: 2, routes: { auth: 'http://127.0.0.1:1', properties: `http://127.0.0.1:${servers[1].address().port}`, bookings: 'http://127.0.0.1:1', notifications: 'http://127.0.0.1:1' } });
+  const as = (ip) => request(limited).get('/api/properties').set('X-Forwarded-For', ip);
+  await as('1.1.1.1').expect(200);
+  await as('1.1.1.1').expect(200);
+  await as('1.1.1.1').expect(429);
+  await as('2.2.2.2').expect(200); // a different user must not be blocked
+});
