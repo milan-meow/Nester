@@ -23,7 +23,8 @@ h1, h2, h3, .brand, .price { font-family: 'Fraunces', Georgia, serif; }
 h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); margin: 0.4em 0; }
 a { color: var(--ink); }
 img { max-width: 100%; }
-main { min-height: 70vh; padding-bottom: 4rem; }
+main { min-height: 70vh; padding: 1rem 0 4rem; }
+.hero { margin-top: -1rem; }
 
 .container { max-width: 1160px; margin: 0 auto; padding: 0 1.25rem; }
 .narrow { max-width: 760px; }
@@ -92,10 +93,12 @@ label { display: flex; flex-direction: column; gap: 0.35rem; font-weight: 500; f
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; margin-top: 1rem; }
 .card { background: var(--card); border-radius: var(--radius); overflow: hidden; text-decoration: none; box-shadow: var(--shadow); transition: transform 0.15s, box-shadow 0.15s; }
 .card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(20, 33, 61, 0.12); }
-.card-img { aspect-ratio: 4 / 3; background: #ddd center / cover; position: relative; }
+.card-img, .detail-hero { background-color: #2b3a5c; background-position: center; background-size: cover; }
+.card-img { aspect-ratio: 4 / 3; position: relative; }
 .card-body { padding: 0.9rem 1rem 1.1rem; }
 .card h3 { font-size: 1.05rem; margin: 0.2rem 0; line-height: 1.3; }
-.card p { margin: 0.2rem 0; font-size: 0.88rem; text-transform: capitalize; }
+.card p { margin: 0.2rem 0; font-size: 0.88rem; }
+.cap { text-transform: capitalize; }
 .price { font-size: 1.25rem; font-weight: 700; }
 .price.big { font-size: 1.8rem; margin: 0.5rem 0 1rem; }
 .facts { display: flex; gap: 0.9rem; color: var(--ink-2); }
@@ -107,13 +110,13 @@ label { display: flex; flex-direction: column; gap: 0.35rem; font-weight: 500; f
 .pager { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem; }
 
 /* ---------- detail ---------- */
-.detail-hero { aspect-ratio: 21 / 9; background: #ddd center / cover; border-radius: var(--radius); margin: 1rem 0 0.5rem; }
+.detail-hero { aspect-ratio: 21 / 9; border-radius: var(--radius); margin: 1rem 0 0.5rem; }
 .thumbs { display: flex; gap: 0.5rem; overflow-x: auto; }
 .thumbs img { height: 90px; border-radius: 10px; }
 .detail-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2.5rem; margin-top: 1.5rem; align-items: start; }
 ul.facts.big { list-style: none; padding: 0; display: flex; gap: 1rem; flex-wrap: wrap; }
 ul.facts.big li { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 0.7rem 1rem; display: flex; flex-direction: column; min-width: 100px; }
-ul.facts.big b { font-size: 1.1rem; text-transform: capitalize; }
+ul.facts.big b { font-size: 1.1rem; }
 ul.facts.big span { font-size: 0.8rem; color: var(--muted); }
 .description { white-space: pre-line; line-height: 1.6; }
 .panel { background: #fff; border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); position: sticky; top: 84px; }

@@ -50,6 +50,7 @@ export default function PropertyForm() {
     }
     body.images = form.images.split(/\s+/).map((s) => s.trim()).filter(Boolean);
     if (body.purpose === 'sale') delete body.rentPeriod;
+    if (body.type === 'shop') body.bedrooms = 0; // field is hidden for shops
     try {
       const { property } = id ? await api.updateProperty(id, body) : await api.createProperty(body);
       navigate(`/properties/${property.id}`);

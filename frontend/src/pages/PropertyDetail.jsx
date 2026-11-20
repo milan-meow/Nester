@@ -29,7 +29,7 @@ export default function PropertyDetail() {
   return (
     <div className="container detail">
       <Link to="/" className="muted">← Back to search</Link>
-      <div className="detail-hero" style={{ backgroundImage: `url(${coverOf(p)})` }} />
+      <div className="detail-hero" style={{ backgroundImage: coverOf(p) }} />
       {p.images?.length > 1 && (
         <div className="thumbs">{p.images.slice(1).map((src) => <img key={src} src={src} alt="" />)}</div>
       )}
@@ -41,7 +41,7 @@ export default function PropertyDetail() {
           <p className="muted">{p.address}, {p.city}</p>
           <div className="price big">{formatPrice(p)}</div>
           <ul className="facts big">
-            <li><b>{p.type}</b><span>Type</span></li>
+            <li><b className="cap">{p.type}</b><span>Type</span></li>
             {p.type !== 'shop' && <li><b>{p.bedrooms}</b><span>Bedrooms</span></li>}
             <li><b>{p.bathrooms}</b><span>Bathrooms</span></li>
             {p.areaSqm && <li><b>{p.areaSqm} m²</b><span>Area</span></li>}
