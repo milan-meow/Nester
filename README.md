@@ -29,8 +29,15 @@ npm run dev -w frontend
 ## Run the tests
 
 ```bash
-npm test               # unit + integration tests for every service
+npm test               # 81 unit + integration tests across all services
+npm run dev & npm run smoke   # 9-step end-to-end test through the gateway
 ```
+
+Demo accounts after `npm run seed`: `owner@nestar.dev` / `seeker@nestar.dev`, password `password123`.
+
+## Push to GitHub
+
+See [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) — it covers making the commits count as your contributions, creating the repo, branch protection, and the everyday PR loop.
 
 ## Documentation
 
