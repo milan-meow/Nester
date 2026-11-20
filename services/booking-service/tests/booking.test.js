@@ -141,3 +141,35 @@ describe('review fixes', () => {
     expect([r1.status, r2.status].sort()).toEqual([200, 409]);
   });
 });
+
+describe('listing removed or closed by owner', () => {
+  const { createBookingService } = require('../src/service');
+  const { registerSubscribers } = require('../src/subscribers');
+  const flush = () => new Promise((r) => setTimeout(r, 10));
+
+  async function setup() {
+    const service = createBookingService({ bookings: new MemoryRepository(), bus, propertyClient: props });
+    await registerSubscribers(bus, service);
+    const a = createApp({ service, jwtSecret: SECRET });
+    const res = await request(a).post('/bookings').set(bearer(tenant)).send({ propertyId: 'flat', kind: 'rent_request' });
+    return { a, id: res.body.booking.id };
+  }
+
+  test('property.deleted → pending requests rejected with a reason', async () => {
+    const { a, id } = await setup();
+    await bus.publish('property.deleted', { propertyId: 'flat' });
+    await flush();
+    const res = await request(a).get(`/bookings/${id}`).set(bearer(tenant));
+    expect(res.body.booking).toMatchObject({ status: 'rejected', reply: 'This listing was removed by the owner' });
+  });
+
+  test('property.updated to rented → pending rejected; other updates ignored', async () => {
+    const { a, id } = await setup();
+    await bus.publish('property.updated', { propertyId: 'flat', status: 'available' });
+    await flush();
+    expect((await request(a).get(`/bookings/${id}`).set(bearer(tenant))).body.booking.status).toBe('pending');
+    await bus.publish('property.updated', { propertyId: 'flat', status: 'rented' });
+    await flush();
+    expect((await request(a).get(`/bookings/${id}`).set(bearer(tenant))).body.booking.status).toBe('rejected');
+  });
+});

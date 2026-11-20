@@ -1,6 +1,8 @@
-const { env, envInt, connectDatabase, makeRepository, sharedBus, createLogger } = require('@nestar/common');
+const { env, envInt, secret, connectDatabase, makeRepository, sharedBus, createLogger } = require('@nestar/common');
 const { createApp } = require('./app');
 const { createPropertyClient } = require('./propertyClient');
+const { createBookingService } = require('./service');
+const { registerSubscribers } = require('./subscribers');
 
 const logger = createLogger('booking-service');
 
@@ -13,15 +15,15 @@ async function start() {
     [{ propertyId: 1, status: 1 }],
   ]);
 
-  const app = createApp({
-    bookings,
-    bus: sharedBus(env('REDIS_URL', '')),
-    jwtSecret: env('JWT_SECRET', 'dev-only-secret'),
-    propertyClient: createPropertyClient({
-      baseUrl: env('PROPERTY_SERVICE_URL', 'http://localhost:4002'),
-      internalKey: env('INTERNAL_API_KEY', 'dev-internal-key'),
-    }),
+  const bus = sharedBus(env('REDIS_URL', ''));
+  const propertyClient = createPropertyClient({
+    baseUrl: env('PROPERTY_SERVICE_URL', 'http://localhost:4002'),
+    internalKey: secret('INTERNAL_API_KEY'),
   });
+  const service = createBookingService({ bookings, bus, propertyClient });
+  await registerSubscribers(bus, service);
+
+  const app = createApp({ service, jwtSecret: secret('JWT_SECRET') });
 
   return app.listen(port, () => logger.info(`listening on :${port}`, { db: conn ? 'mongo' : 'memory' }));
 }

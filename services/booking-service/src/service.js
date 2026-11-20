@@ -34,6 +34,16 @@ function createBookingService({ bookings, bus, propertyClient }) {
     });
   }
 
+  /** Rejects every pending request on a listing that can no longer be taken. */
+  async function closePendingForProperty(propertyId, reason) {
+    const pending = await bookings.find({ propertyId, status: 'pending' });
+    for (const b of pending) {
+      const rejected = await bookings.updateById(b.id, { status: 'rejected', reply: reason, decidedAt: new Date().toISOString() });
+      await publishStatus(rejected);
+    }
+    return pending.length;
+  }
+
   return {
     async create(user, input) {
       const data = validate(createSchema, input);
@@ -100,20 +110,14 @@ function createBookingService({ bookings, bus, propertyClient }) {
       const updated = await bookings.updateById(id, { status, reply, decidedAt: new Date().toISOString() });
       await publishStatus(updated);
 
-      // The property is gone → politely reject the other pending offers / rent requests.
+      // The property is gone → politely reject the other pending requests.
       if (newPropertyStatus) {
-        const others = await bookings.find({
-          propertyId: booking.propertyId, status: 'pending', kind: { $in: ['offer', 'rent_request', 'viewing'] },
-        });
-        for (const other of others) {
-          const rejected = await bookings.updateById(other.id, {
-            status: 'rejected', reply: 'Another request was accepted for this listing', decidedAt: new Date().toISOString(),
-          });
-          await publishStatus(rejected);
-        }
+        await closePendingForProperty(booking.propertyId, 'Another request was accepted for this listing');
       }
       return updated;
     },
+
+    closePendingForProperty,
   };
 }
 

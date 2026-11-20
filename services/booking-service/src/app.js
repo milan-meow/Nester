@@ -4,9 +4,9 @@ const { errorHandler, notFoundHandler, requestLogger, createLogger } = require('
 const { createBookingService } = require('./service');
 const { bookingRoutes } = require('./routes');
 
-function createApp({ bookings, bus, propertyClient, jwtSecret }) {
+function createApp({ bookings, bus, propertyClient, jwtSecret, service: injected }) {
   const app = express();
-  const service = createBookingService({ bookings, bus, propertyClient });
+  const service = injected || createBookingService({ bookings, bus, propertyClient });
 
   app.use(helmet());
   app.use(express.json({ limit: '100kb' }));
