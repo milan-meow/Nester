@@ -1,0 +1,26 @@
+# One Dockerfile for every backend service:
+#   docker build -f Dockerfile.service --build-arg SERVICE=auth-service -t nestar/auth-service .
+FROM node:20-alpine AS deps
+ARG SERVICE
+WORKDIR /app
+# Copy only package manifests first so the dependency layer is cached between code changes.
+COPY package.json package-lock.json ./
+COPY packages/common/package.json packages/common/
+COPY services/auth-service/package.json services/auth-service/
+COPY services/property-service/package.json services/property-service/
+COPY services/booking-service/package.json services/booking-service/
+COPY services/notification-service/package.json services/notification-service/
+COPY services/api-gateway/package.json services/api-gateway/
+COPY frontend/package.json frontend/
+# Installs production deps of THIS service (+ @nestar/common) only.
+RUN npm ci --omit=dev --workspace services/${SERVICE} --no-audit --no-fund
+
+FROM node:20-alpine
+ARG SERVICE
+ENV NODE_ENV=production SERVICE=${SERVICE}
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY packages/common ./packages/common
+COPY services/${SERVICE} ./services/${SERVICE}
+USER node
+CMD ["sh", "-c", "node services/$SERVICE/src/server.js"]

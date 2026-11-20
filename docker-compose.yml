@@ -1,0 +1,82 @@
+# docker compose up --build   →  http://localhost:5173
+x-service: &service
+  build:
+    context: .
+    dockerfile: Dockerfile.service
+  restart: unless-stopped
+  environment: &env
+    JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (at least 32 characters)}
+    JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Set INTERNAL_API_KEY in .env (at least 32 characters)}
+    MONGO_URL: mongodb://mongo:27017
+    REDIS_URL: redis://redis:6379
+  depends_on:
+    mongo: { condition: service_healthy }
+    redis: { condition: service_healthy }
+  healthcheck:
+    test: ["CMD-SHELL", "wget -qO- http://localhost:$$PORT/health || exit 1"]
+    interval: 10s
+    timeout: 3s
+    retries: 5
+
+services:
+  mongo:
+    image: mongo:7
+    volumes: [mongo-data:/data/db]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+
+  auth-service:
+    <<: *service
+    build: { context: ., dockerfile: Dockerfile.service, args: { SERVICE: auth-service } }
+    environment: { <<: *env, PORT: 4001 }
+
+  property-service:
+    <<: *service
+    build: { context: ., dockerfile: Dockerfile.service, args: { SERVICE: property-service } }
+    environment: { <<: *env, PORT: 4002 }
+
+  booking-service:
+    <<: *service
+    build: { context: ., dockerfile: Dockerfile.service, args: { SERVICE: booking-service } }
+    environment: { <<: *env, PORT: 4003, PROPERTY_SERVICE_URL: http://property-service:4002 }
+
+  notification-service:
+    <<: *service
+    build: { context: ., dockerfile: Dockerfile.service, args: { SERVICE: notification-service } }
+    environment: { <<: *env, PORT: 4004 }
+
+  api-gateway:
+    <<: *service
+    build: { context: ., dockerfile: Dockerfile.service, args: { SERVICE: api-gateway } }
+    environment:
+      <<: *env
+      PORT: 8080
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      AUTH_SERVICE_URL: http://auth-service:4001
+      PROPERTY_SERVICE_URL: http://property-service:4002
+      BOOKING_SERVICE_URL: http://booking-service:4003
+      NOTIFICATION_SERVICE_URL: http://notification-service:4004
+    depends_on:
+      auth-service: { condition: service_healthy }
+      property-service: { condition: service_healthy }
+      booking-service: { condition: service_healthy }
+      notification-service: { condition: service_healthy }
+    ports: ["8080:8080"]
+
+  frontend:
+    build: { context: ., dockerfile: frontend/Dockerfile }
+    depends_on: [api-gateway]
+    ports: ["5173:80"]
+
+volumes:
+  mongo-data:
