@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { MemoryRepository, MemoryEventBus, signToken, notFound, unavailable } = require('@nestar/common');
+const { MemoryRepository, MemoryEventBus, signToken, notFound, unavailable, conflict } = require('@nestar/common');
 const { createApp } = require('../src/app');
 
 const SECRET = 'test-secret';
@@ -18,13 +18,17 @@ function fakePropertyClient() {
   return {
     props,
     down: false,
+    latencyMs: 0,
     async getProperty(id) {
+      await new Promise((r) => setTimeout(r, this.latencyMs)); // simulate network
       if (this.down) throw unavailable();
       if (!props.has(id)) throw notFound('Property not found');
       return { ...props.get(id) };
     },
-    async setStatus(id, status) {
+    async setStatus(id, status, expectedStatus) {
+      await new Promise((r) => setTimeout(r, this.latencyMs));
       if (this.down) throw unavailable();
+      if (expectedStatus && props.get(id).status !== expectedStatus) throw conflict('This listing is no longer available');
       props.get(id).status = status;
       return { ...props.get(id) };
     },
@@ -125,5 +129,15 @@ describe('listing & privacy', () => {
     expect((await request(app).get('/bookings/incoming').set(bearer(owner))).body.items).toHaveLength(1);
     expect((await request(app).get('/bookings/incoming?status=accepted').set(bearer(owner))).body.items).toHaveLength(0);
     await request(app).get(`/bookings/${a.id}`).set(bearer(stranger)).expect(403);
+  });
+});
+
+describe('review fixes', () => {
+  test('two owners-clicks accepting different requests at once → only one wins', async () => {
+    const a = (await book(tenant, { propertyId: 'flat', kind: 'rent_request' })).body.booking;
+    const b = (await book(tenant2, { propertyId: 'flat', kind: 'rent_request' })).body.booking;
+    props.latencyMs = 20;
+    const [r1, r2] = await Promise.all([setStatus(owner, a.id, 'accepted'), setStatus(owner, b.id, 'accepted')]);
+    expect([r1.status, r2.status].sort()).toEqual([200, 409]);
   });
 });

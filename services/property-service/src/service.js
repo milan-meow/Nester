@@ -1,4 +1,4 @@
-const { validate, badRequest, forbidden, notFound, Topics } = require('@nestar/common');
+const { validate, badRequest, forbidden, notFound, conflict, Topics } = require('@nestar/common');
 const { propertySchema, updateSchema, searchSchema, statusSchema } = require('./schemas');
 
 // User text goes into a regex → escape it, otherwise "(a+)+$" could hang the server (ReDoS).
@@ -82,7 +82,9 @@ function createPropertyService({ properties, bus }) {
       checkRentPeriod(merged);
       if (merged.purpose === 'sale') patch.rentPeriod = null;
       const updated = await properties.updateById(id, patch);
-      await bus.publish(Topics.PROPERTY_UPDATED, { propertyId: id, ownerId: existing.ownerId, changes: Object.keys(patch) });
+      await bus.publish(Topics.PROPERTY_UPDATED, {
+        propertyId: id, ownerId: existing.ownerId, title: updated.title, status: updated.status, changes: Object.keys(patch),
+      });
       return updated;
     },
 
@@ -95,9 +97,13 @@ function createPropertyService({ properties, bus }) {
 
     /** Internal: called by booking-service when a deal is accepted. */
     async setStatus(id, input) {
+      const { status, expectedStatus } = validate(statusSchema, input);
       await getOrThrow(id);
-      const { status } = validate(statusSchema, input);
-      return properties.updateById(id, { status });
+      if (!expectedStatus) return properties.updateById(id, { status });
+      // Atomic: two parallel "accept" clicks can't both turn the same flat into "rented".
+      const updated = await properties.updateOne({ id, status: expectedStatus }, { status });
+      if (!updated) throw conflict('This listing is no longer available');
+      return updated;
     },
   };
 }

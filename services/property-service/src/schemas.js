@@ -34,6 +34,10 @@ const searchSchema = {
   limit: { type: 'integer', min: 1, max: 50, default: 12 },
 };
 
-const statusSchema = { status: { type: 'string', required: true, enum: STATUSES } };
+const statusSchema = {
+  status: { type: 'string', required: true, enum: STATUSES },
+  // Optional compare-and-set: only change if the current status is this one.
+  expectedStatus: { type: 'string', enum: STATUSES },
+};
 
 module.exports = { propertySchema, updateSchema, searchSchema, statusSchema, TYPES, PURPOSES, STATUSES };

@@ -71,6 +71,18 @@ class MemoryRepository {
     return { ...updated };
   }
 
+  /** Atomic compare-and-set: updates the first doc matching filter, or returns null. */
+  async updateOne(filter, patch) {
+    for (const [id, item] of this.items) {
+      if (matches(item, filter)) {
+        const updated = { ...item, ...patch, id, updatedAt: new Date().toISOString() };
+        this.items.set(id, updated);
+        return { ...updated };
+      }
+    }
+    return null;
+  }
+
   async updateMany(filter, patch) {
     let n = 0;
     for (const [id, item] of this.items) {
@@ -136,6 +148,14 @@ class MongoRepository {
     const { id: _ignored, ...safe } = patch;
     const doc = await this.model
       .findOneAndUpdate({ id }, { $set: { ...safe, updatedAt: new Date().toISOString() } }, { new: true })
+      .lean();
+    return MongoRepository.clean(doc);
+  }
+
+  async updateOne(filter, patch) {
+    const { id: _ignored, ...safe } = patch;
+    const doc = await this.model
+      .findOneAndUpdate(filter, { $set: { ...safe, updatedAt: new Date().toISOString() } }, { new: true })
       .lean();
     return MongoRepository.clean(doc);
   }

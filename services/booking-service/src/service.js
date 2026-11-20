@@ -92,10 +92,9 @@ function createBookingService({ bookings, bus, propertyClient }) {
 
       // Accepting a deal changes the property first: if that fails, the booking stays pending.
       const newPropertyStatus = status === 'accepted' ? PROPERTY_STATUS_ON_ACCEPT[booking.kind] : null;
+      // Compare-and-set on property-service, so two parallel accepts can't both succeed.
       if (newPropertyStatus) {
-        const property = await propertyClient.getProperty(booking.propertyId);
-        if (property.status !== 'available') throw conflict('This listing is no longer available');
-        await propertyClient.setStatus(booking.propertyId, newPropertyStatus);
+        await propertyClient.setStatus(booking.propertyId, newPropertyStatus, 'available');
       }
 
       const updated = await bookings.updateById(id, { status, reply, decidedAt: new Date().toISOString() });

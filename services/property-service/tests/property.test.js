@@ -147,3 +147,10 @@ describe('internal routes', () => {
     await request(app).get(`/internal/properties/${id}`).set('x-internal-key', KEY).expect(200);
   });
 });
+
+test('internal status compare-and-set: second accept gets 409', async () => {
+  const id = (await create()).body.property.id;
+  const set = () => request(app).patch(`/internal/properties/${id}/status`).set('x-internal-key', KEY).send({ status: 'rented', expectedStatus: 'available' });
+  await set().expect(200);
+  await set().expect(409);
+});
